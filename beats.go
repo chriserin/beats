@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-
 	portmidi.Initialize()
 
 	project := projectfile.Parse("./projectfile/fixtures/simple_project.bp")
