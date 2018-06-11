@@ -9,8 +9,9 @@ import (
 
 //PatternFile contains all data defined in a pattern file
 type PatternFile struct {
-	Text     string
-	GridText string
+	DeviceName string
+	Text       string
+	GridText   string
 }
 
 func check(e error) {
@@ -45,9 +46,8 @@ func Parse(fileName string) PatternFile {
 	}
 
 	return PatternFile{
-		Text:     strings.Join(lines, "\n"),
-		GridText: strings.Join(patternLines, "\n"),
+		DeviceName: "Bus",
+		Text:       strings.Join(lines, "\n"),
+		GridText:   strings.Join(patternLines, "\n"),
 	}
 }
-
-///home/chris/hashrocket/beats/pattern_file/fixtures/simple_pattern.pf

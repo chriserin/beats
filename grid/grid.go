@@ -1,6 +1,7 @@
 package grid
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/rakyll/portmidi"
@@ -18,8 +19,9 @@ func TransformGridToMidi(gridText string) []portmidi.Event {
 	textGridPoints := TransformTextGrid(gridText)
 	rawPitchPoints := TransformTextGridPoints(textGridPoints, "down")
 	beatPoints := TransformRawPitchPoints(rawPitchPoints)
-	pitchPoints := TransformBeatPoints(beatPoints, []int{42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53})
+	pitchPoints := TransformBeatPoints(beatPoints, []int{62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73})
 	timedPoints := TransformPitchPoints(pitchPoints, 120)
+	fmt.Println(timedPoints)
 	midiPoints := TransformTimedPoints(timedPoints)
 	return midiPoints
 }
@@ -165,6 +167,9 @@ func TransformPitchPoints(points []PitchPoint, tempo Tempo) []TimedPoint {
 //TransformTimedPoints transforms timed points into portmidi Events
 func TransformTimedPoints(points []TimedPoint) []portmidi.Event {
 	results := make([]portmidi.Event, len(points)*2)
+
+	fmt.Println("portmidi time")
+	fmt.Println(portmidi.Time())
 
 	for i, point := range points {
 		results[i*2] = portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start), Status: 0x90, Data1: int64(point.Pitch), Data2: 100}

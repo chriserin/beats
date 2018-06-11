@@ -10,8 +10,6 @@ import (
 
 func TestParse(t *testing.T) {
 
-	assert.Equal(t, 1, 1, "Always Works")
-
 	pFile := Parse(testfileName("simple_pattern.pf"))
 
 	assert.NotNil(t, pFile)
