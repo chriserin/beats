@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"../devices"
 	"github.com/rakyll/portmidi"
 )
 
@@ -15,14 +16,14 @@ type TextGridPoint struct {
 }
 
 //TransformGridToMidi transforms a grid into midi notes
-func TransformGridToMidi(gridText string) []portmidi.Event {
+func TransformGridToMidi(gridText string, options map[string]string) []MidiPoint {
 	textGridPoints := TransformTextGrid(gridText)
 	rawPitchPoints := TransformTextGridPoints(textGridPoints, "down")
 	beatPoints := TransformRawPitchPoints(rawPitchPoints)
 	pitchPoints := TransformBeatPoints(beatPoints, []int{62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73})
 	timedPoints := TransformPitchPoints(pitchPoints, 120)
-	fmt.Println(timedPoints)
 	midiPoints := TransformTimedPoints(timedPoints)
+	midiPoints = SetDeviceID(midiPoints, options["DeviceName"])
 	return midiPoints
 }
 
@@ -164,16 +165,49 @@ func TransformPitchPoints(points []PitchPoint, tempo Tempo) []TimedPoint {
 	return results
 }
 
-//TransformTimedPoints transforms timed points into portmidi Events
-func TransformTimedPoints(points []TimedPoint) []portmidi.Event {
-	results := make([]portmidi.Event, len(points)*2)
+//MidiPoint containts a midi event and the device ID (and later the channel)
+type MidiPoint struct {
+	Event    portmidi.Event
+	DeviceID portmidi.DeviceID
+}
 
-	fmt.Println("portmidi time")
-	fmt.Println(portmidi.Time())
+//TransformTimedPoints transforms timed points into portmidi Events
+func TransformTimedPoints(points []TimedPoint) []MidiPoint {
+	results := make([]MidiPoint, len(points)*2)
 
 	for i, point := range points {
-		results[i*2] = portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start), Status: 0x90, Data1: int64(point.Pitch), Data2: 100}
-		results[i*2+1] = portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start+point.Length), Status: 0x80, Data1: int64(point.Pitch), Data2: 100}
+		startEvent := portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start), Status: 0x90, Data1: int64(point.Pitch), Data2: 100}
+		endEvent := portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start+point.Length), Status: 0x80, Data1: int64(point.Pitch), Data2: 100}
+		results[i*2] = MidiPoint{Event: startEvent}
+		results[i*2+1] = MidiPoint{Event: endEvent}
+	}
+
+	return results
+}
+
+//SetDeviceID sets the device ID on all midi points
+func SetDeviceID(points []MidiPoint, name string) []MidiPoint {
+	results := make([]MidiPoint, len(points))
+
+	deviceID := devices.FindDeviceID(name)
+	fmt.Printf("Found device id %d for name %s\n", int(deviceID), name)
+
+	for i, point := range points {
+		results[i] = MidiPoint{Event: point.Event, DeviceID: deviceID}
+	}
+
+	return results
+}
+
+//ShiftEvents moves events by the shiftAmount
+func ShiftEvents(points []MidiPoint, shiftAmount portmidi.Timestamp) []MidiPoint {
+	results := make([]MidiPoint, len(points))
+
+	for i, point := range points {
+		event := point.Event
+		newEvent := portmidi.Event{Timestamp: event.Timestamp + shiftAmount, Status: event.Status, Data1: event.Data1, Data2: event.Data2}
+		point.Event = newEvent
+		results[i] = point
 	}
 
 	return results

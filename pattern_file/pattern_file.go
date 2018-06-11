@@ -5,6 +5,8 @@ import (
 	"bufio"
 	"os"
 	"strings"
+
+	"../grid"
 )
 
 //PatternFile contains all data defined in a pattern file
@@ -12,6 +14,7 @@ type PatternFile struct {
 	DeviceName string
 	Text       string
 	GridText   string
+	MidiPoints []grid.MidiPoint
 }
 
 type option struct {
@@ -53,10 +56,14 @@ func Parse(fileName string) PatternFile {
 		}
 	}
 
+	gridText := strings.Join(patternLines, "\n")
+	midiPoints := grid.TransformGridToMidi(gridText, options)
+
 	return PatternFile{
 		DeviceName: options["DeviceName"],
 		Text:       strings.Join(lines, "\n"),
-		GridText:   strings.Join(patternLines, "\n"),
+		GridText:   gridText,
+		MidiPoints: midiPoints,
 	}
 }
 

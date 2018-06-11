@@ -16,7 +16,7 @@ func main() {
 	project := projectfile.Parse("./projectfile/fixtures/simple_project.bp")
 	runner := runner.InitializeFromProject(project)
 	runner.Run()
-	time.Sleep(12 * time.Second)
+	time.Sleep(time.Duration(project.Length) * time.Millisecond)
 	fmt.Println(portmidi.Time())
 	defer runner.CloseOuts()
 

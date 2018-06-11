@@ -143,12 +143,12 @@ func TestTransformTimedPoints(t *testing.T) {
 
 	results := TransformTimedPoints(points)
 
-	event1 := portmidi.Event{Timestamp: portmidi.Time(), Status: 0x90, Data1: 42, Data2: 100}
-	event1End := portmidi.Event{Timestamp: portmidi.Time() + 499, Status: 0x80, Data1: 42, Data2: 100}
-	event2 := portmidi.Event{Timestamp: portmidi.Time() + 500, Status: 0x90, Data1: 43, Data2: 100}
-	event2End := portmidi.Event{Timestamp: portmidi.Time() + 500 + 499, Status: 0x80, Data1: 43, Data2: 100}
-	event3 := portmidi.Event{Timestamp: portmidi.Time() + 1000, Status: 0x90, Data1: 44, Data2: 100}
-	event3End := portmidi.Event{Timestamp: portmidi.Time() + 1000 + 499, Status: 0x80, Data1: 44, Data2: 100}
+	event1 := MidiPoint{Event: portmidi.Event{Timestamp: portmidi.Time(), Status: 0x90, Data1: 42, Data2: 100}}
+	event1End := MidiPoint{Event: portmidi.Event{Timestamp: portmidi.Time() + 499, Status: 0x80, Data1: 42, Data2: 100}}
+	event2 := MidiPoint{Event: portmidi.Event{Timestamp: portmidi.Time() + 500, Status: 0x90, Data1: 43, Data2: 100}}
+	event2End := MidiPoint{Event: portmidi.Event{Timestamp: portmidi.Time() + 500 + 499, Status: 0x80, Data1: 43, Data2: 100}}
+	event3 := MidiPoint{Event: portmidi.Event{Timestamp: portmidi.Time() + 1000, Status: 0x90, Data1: 44, Data2: 100}}
+	event3End := MidiPoint{Event: portmidi.Event{Timestamp: portmidi.Time() + 1000 + 499, Status: 0x80, Data1: 44, Data2: 100}}
 
 	assert.Equal(t, event1, results[0])
 	assert.Equal(t, event1End, results[1])

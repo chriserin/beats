@@ -3,11 +3,12 @@ package projectfile
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strings"
 
+	"../grid"
 	"../pattern_file"
+	"github.com/rakyll/portmidi"
 )
 
 // Project struct
@@ -15,11 +16,13 @@ type Project struct {
 	Text         string
 	Parts        []Part
 	ProjectLines []string
+	Length       portmidi.Timestamp
 }
 
 // Part struct
 type Part struct {
 	Patterns []patternfile.PatternFile
+	Events   []grid.MidiPoint
 }
 
 func check(e error) {
@@ -66,24 +69,42 @@ func Parse(fileName string) Project {
 
 	parts := make([]Part, len(projectLines))
 
+	endOfLastPart := portmidi.Timestamp(0)
 	for i, projectLine := range projectLines {
 		newPart := Part{Patterns: []patternfile.PatternFile{}}
 
 		for _, key := range projectLine {
-			newPart.Patterns = append(newPart.Patterns, parsedPatternFiles[string(key)])
+			pattern := parsedPatternFiles[string(key)]
+			newPart.Patterns = append(newPart.Patterns, pattern)
+			newPart.Events = append(newPart.Events, grid.ShiftEvents(pattern.MidiPoints, endOfLastPart)...)
 		}
+
+		endOfLastPart = findLastPartEventTimestamp(newPart) + 1
 
 		parts[i] = newPart
 	}
-
-	fmt.Println("Returning Project")
-	fmt.Println(lines)
 
 	return Project{
 		Text:         strings.Join(lines, "\n"),
 		ProjectLines: projectLines,
 		Parts:        parts,
+		Length:       findLastProjectEventTimestamp(parts),
 	}
+}
+
+func findLastProjectEventTimestamp(parts []Part) portmidi.Timestamp {
+	var lastTimestamp = portmidi.Timestamp(0)
+	for _, part := range parts {
+		partEndTimestamp := findLastPartEventTimestamp(part)
+		if partEndTimestamp > lastTimestamp {
+			lastTimestamp = partEndTimestamp
+		}
+	}
+	return lastTimestamp
+}
+
+func findLastPartEventTimestamp(part Part) portmidi.Timestamp {
+	return part.Events[len(part.Events)-1].Event.Timestamp
 }
 
 func parseFileDeclaration(patternFiles map[string]string, line string) map[string]string {

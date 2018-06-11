@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"../devices"
-	"../grid"
 	"../projectfile"
 
 	"github.com/rakyll/portmidi"
@@ -13,13 +11,14 @@ import (
 
 // Runner keeps track of its own outputs
 type Runner struct {
-	outs    []out
+	outs    []Out
 	project projectfile.Project
 }
 
-type out struct {
-	deviceID portmidi.DeviceID
-	stream   *portmidi.Stream
+// Out represents the portmidi stream and the associated DeviceID
+type Out struct {
+	DeviceID portmidi.DeviceID
+	Stream   *portmidi.Stream
 }
 
 // InitializeFromProject func
@@ -32,7 +31,7 @@ func InitializeFromProject(project projectfile.Project) Runner {
 // CloseOuts close all the open outs
 func (runner Runner) CloseOuts() {
 	for _, out := range runner.outs {
-		out.stream.Close()
+		out.Stream.Close()
 	}
 }
 
@@ -42,36 +41,25 @@ func (runner Runner) Run() {
 }
 
 func (runner Runner) runProject(project projectfile.Project) {
-	fmt.Println("Running Project")
-	fmt.Println(project)
 
 	for _, part := range project.Parts {
-		for _, pattern := range part.Patterns {
-			deviceID := devices.FindDeviceID(pattern.DeviceName)
-			stream := runner.findOrCreateOut(deviceID)
-			runner.outs = append(runner.outs, out{stream: stream, deviceID: deviceID})
-		}
-	}
-
-	for _, part := range project.Parts {
-		for _, pattern := range part.Patterns {
-			deviceID := devices.FindDeviceID(pattern.DeviceName)
-			midiPoints := grid.TransformGridToMidi(pattern.GridText)
-			runner.schedule(midiPoints, deviceID)
+		for i, midiPoint := range part.Events {
+			fmt.Printf("Scheduling point %d\n", i)
+			fmt.Println(midiPoint.Event)
+			out, isNew := runner.findOrCreateOut(midiPoint.DeviceID)
+			if isNew {
+				runner.outs = append(runner.outs, out)
+			}
+			out.Stream.Write([]portmidi.Event{midiPoint.Event})
 		}
 	}
 }
 
-func (runner Runner) schedule(midiPoints []portmidi.Event, deviceID portmidi.DeviceID) {
-	out := runner.findOrCreateOut(deviceID)
-	fmt.Println(midiPoints)
-	out.Write(midiPoints)
-}
-
-func (runner Runner) findOrCreateOut(deviceID portmidi.DeviceID) *portmidi.Stream {
+func (runner Runner) findOrCreateOut(deviceID portmidi.DeviceID) (Out, bool) {
+	fmt.Printf("Finding Device for %d\n", int(deviceID))
 	for _, out := range runner.outs {
-		if out.deviceID == deviceID {
-			return out.stream
+		if out.DeviceID == deviceID {
+			return out, false
 		}
 	}
 
@@ -80,5 +68,5 @@ func (runner Runner) findOrCreateOut(deviceID portmidi.DeviceID) *portmidi.Strea
 		log.Fatal(err)
 	}
 
-	return newOut
+	return Out{Stream: newOut, DeviceID: deviceID}, true
 }
