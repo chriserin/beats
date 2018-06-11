@@ -12,7 +12,7 @@ import (
 func main() {
 	portmidi.Initialize()
 
-	project := projectfile.Parse("./projectfile/fixtures/simple_project.bp")
+	project := projectfile.Parse("./projectfile/fixtures/key_pattern_repeat_project.bp")
 	runner := runner.InitializeFromProject(project)
 	runner.Run()
 	time.Sleep(time.Duration(project.Length) * time.Millisecond)

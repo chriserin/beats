@@ -14,9 +14,19 @@ func TestParse(t *testing.T) {
 	project := Parse(testfileName("simple_project.bp"))
 
 	assert.NotNil(t, project)
-	assert.Contains(t, project.Text, "PROJECT")
 
-	assert.Equal(t, 2, len(project.Parts), project.Text)
+	assert.Equal(t, 2, len(project.Parts))
+	assert.Equal(t, 11999, int(project.Length))
+}
+
+func TestParseWithKeyPatternRepeats(t *testing.T) {
+
+	portmidi.Initialize()
+	project := Parse(testfileName("key_pattern_repeat_project.bp"))
+
+	assert.NotNil(t, project)
+
+	assert.Equal(t, 1, len(project.Parts))
 	assert.Equal(t, 11999, int(project.Length))
 }
 

@@ -3,6 +3,7 @@ package projectfile
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,7 +15,6 @@ import (
 
 // Project struct
 type Project struct {
-	Text         string
 	Parts        []part.Part
 	ProjectLines []string
 	Length       portmidi.Timestamp
@@ -28,34 +28,12 @@ func check(e error) {
 
 // Parse a project file
 func Parse(fileName string) Project {
-	lines := []string{}
-	projectLines := []string{}
-	postPattern := false
-
-	patternFiles := map[string]string{}
-
 	projectDir := filepath.Dir(fileName)
 	file, err := os.Open(fileName)
 	os.Chdir(projectDir)
 	check(err)
 
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		lines = append(lines, line)
-
-		if postPattern {
-			projectLines = append(projectLines, line)
-		} else {
-			patternFiles = parseFileDeclaration(patternFiles, line)
-		}
-
-		if strings.Contains(line, "PROJECT") {
-			postPattern = true
-		}
-	}
+	projectLines, patternFiles := splitFileText(file)
 
 	parsedPatternFiles := map[string]patternfile.PatternFile{}
 
@@ -75,11 +53,34 @@ func Parse(fileName string) Project {
 	}
 
 	return Project{
-		Text:         strings.Join(lines, "\n"),
 		ProjectLines: projectLines,
 		Parts:        parts,
 		Length:       endOfLastPart - 1,
 	}
+}
+
+func splitFileText(file io.Reader) ([]string, map[string]string) {
+	projectLines := []string{}
+	patternFiles := map[string]string{}
+
+	scanner := bufio.NewScanner(file)
+
+	postPattern := false
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if postPattern {
+			projectLines = append(projectLines, line)
+		} else {
+			patternFiles = parseFileDeclaration(patternFiles, line)
+		}
+
+		if strings.Contains(line, "PROJECT") {
+			postPattern = true
+		}
+	}
+
+	return projectLines, patternFiles
 }
 
 func findLastPartEventTimestamp(part part.Part) portmidi.Timestamp {
