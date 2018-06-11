@@ -4,6 +4,7 @@ package projectfile
 import (
 	"bufio"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"../grid"
@@ -39,7 +40,9 @@ func Parse(fileName string) Project {
 
 	patternFiles := map[string]string{}
 
+	projectDir := filepath.Dir(fileName)
 	file, err := os.Open(fileName)
+	os.Chdir(projectDir)
 	check(err)
 
 	scanner := bufio.NewScanner(file)
