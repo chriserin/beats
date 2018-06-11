@@ -14,6 +14,11 @@ type PatternFile struct {
 	GridText   string
 }
 
+type option struct {
+	key   string
+	value string
+}
+
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -25,6 +30,7 @@ func Parse(fileName string) PatternFile {
 	lines := []string{}
 	patternLines := []string{}
 	postPattern := false
+	options := make(map[string]string)
 
 	file, err := os.Open(fileName)
 	check(err)
@@ -38,6 +44,8 @@ func Parse(fileName string) PatternFile {
 
 		if postPattern {
 			patternLines = append(patternLines, line)
+		} else {
+			appendOption(options, parseForConfiguration(line))
 		}
 
 		if strings.Contains(line, "PATTERN") {
@@ -46,8 +54,27 @@ func Parse(fileName string) PatternFile {
 	}
 
 	return PatternFile{
-		DeviceName: "Bus",
+		DeviceName: options["DeviceName"],
 		Text:       strings.Join(lines, "\n"),
 		GridText:   strings.Join(patternLines, "\n"),
 	}
+}
+
+func appendOption(options map[string]string, parsedOption *option) {
+	if parsedOption != nil {
+		options[parsedOption.key] = parsedOption.value
+	}
+}
+
+func parseForConfiguration(line string) *option {
+	if strings.Contains(line, "=") {
+		splitValues := strings.Split(line, "=")
+
+		key := splitValues[0]
+		value := splitValues[1]
+
+		return &option{key, value}
+	}
+
+	return nil
 }
