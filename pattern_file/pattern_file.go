@@ -32,7 +32,7 @@ func check(e error) {
 }
 
 //Parse takes a filname, reads, parses and structures all the data in a file
-func Parse(fileName string) PatternFile {
+func Parse(fileName string, projectOptions grid.PartOptions) PatternFile {
 	lines := []string{}
 	patternLines := []string{}
 	postPattern := false
@@ -59,8 +59,10 @@ func Parse(fileName string) PatternFile {
 		}
 	}
 
+	partOptions := grid.PartOptions{Tempo: projectOptions.Tempo, DeviceName: options["DeviceName"]}
+
 	gridText := strings.Join(patternLines, "\n")
-	midiPoints := grid.TransformGridToMidi(gridText, options)
+	midiPoints := grid.TransformGridToMidi(gridText, partOptions)
 
 	return PatternFile{
 		DeviceName: options["DeviceName"],

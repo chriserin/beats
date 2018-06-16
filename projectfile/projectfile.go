@@ -6,8 +6,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	"../grid"
 	"../part"
 	"../pattern_file"
 	"github.com/rakyll/portmidi"
@@ -18,8 +20,10 @@ type Project struct {
 	Parts        []part.Part
 	ProjectLines []string
 	Length       portmidi.Timestamp
+	Tempo        grid.Tempo
 }
 
+// Options for project to pass around to patterns
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -33,12 +37,16 @@ func Parse(fileName string) Project {
 	os.Chdir(projectDir)
 	check(err)
 
-	projectLines, patternFiles := splitFileText(file)
+	projectLines, patternFiles, options := splitFileText(file)
+
+	parsedTempo := parseTempo(options)
+
+	projectOptions := grid.PartOptions{Tempo: parsedTempo}
 
 	parsedPatternFiles := map[string]patternfile.PatternFile{}
 
 	for key, fileName := range patternFiles {
-		parsedPatternFile := patternfile.Parse(fileName)
+		parsedPatternFile := patternfile.Parse(fileName, projectOptions)
 		parsedPatternFiles[key] = parsedPatternFile
 	}
 
@@ -56,12 +64,30 @@ func Parse(fileName string) Project {
 		ProjectLines: projectLines,
 		Parts:        parts,
 		Length:       endOfLastPart - 1,
+		Tempo:        parsedTempo,
 	}
 }
 
-func splitFileText(file io.Reader) ([]string, map[string]string) {
+func parseTempo(options map[string]string) grid.Tempo {
+	var parsedTempo int
+	var err error
+
+	if tempo, ok := options["TEMPO"]; ok {
+		parsedTempo, err = strconv.Atoi(tempo)
+		if err != nil {
+			panic("Tempo must be an integer")
+		}
+	} else {
+		return grid.Tempo(120)
+	}
+
+	return grid.Tempo(parsedTempo)
+}
+
+func splitFileText(file io.Reader) ([]string, map[string]string, map[string]string) {
 	projectLines := []string{}
 	patternFiles := map[string]string{}
+	options := map[string]string{}
 
 	scanner := bufio.NewScanner(file)
 
@@ -72,7 +98,7 @@ func splitFileText(file io.Reader) ([]string, map[string]string) {
 		if postPattern {
 			projectLines = append(projectLines, line)
 		} else {
-			patternFiles = parseFileDeclaration(patternFiles, line)
+			patternFiles, options = parseProjectOption(line, patternFiles, options)
 		}
 
 		if strings.Contains(line, "PROJECT") {
@@ -80,22 +106,26 @@ func splitFileText(file io.Reader) ([]string, map[string]string) {
 		}
 	}
 
-	return projectLines, patternFiles
+	return projectLines, patternFiles, options
 }
 
 func findLastPartEventTimestamp(part part.Part) portmidi.Timestamp {
 	return part.Events[len(part.Events)-1].Event.Timestamp
 }
 
-func parseFileDeclaration(patternFiles map[string]string, line string) map[string]string {
+func parseProjectOption(line string, patternFiles map[string]string, options map[string]string) (map[string]string, map[string]string) {
 	if strings.Contains(line, "=") {
 		splitValues := strings.Split(line, "=")
 
 		identifier := splitValues[0]
-		filePath := splitValues[1]
+		value := splitValues[1]
 
-		patternFiles[identifier] = filePath
+		if len(identifier) == 1 {
+			patternFiles[identifier] = value
+		} else {
+			options[identifier] = value
+		}
 	}
 
-	return patternFiles
+	return patternFiles, options
 }
