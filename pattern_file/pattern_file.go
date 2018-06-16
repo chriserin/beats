@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"../grid"
+	"../notes"
 	"github.com/rakyll/portmidi"
 )
 
@@ -32,7 +33,7 @@ func check(e error) {
 }
 
 //Parse takes a filname, reads, parses and structures all the data in a file
-func Parse(fileName string, projectOptions grid.PartOptions) PatternFile {
+func Parse(fileName string, projectOptions grid.Options) PatternFile {
 	lines := []string{}
 	patternLines := []string{}
 	postPattern := false
@@ -59,7 +60,8 @@ func Parse(fileName string, projectOptions grid.PartOptions) PatternFile {
 		}
 	}
 
-	partOptions := grid.PartOptions{Tempo: projectOptions.Tempo, DeviceName: options["DeviceName"]}
+	patternNotes := parseNotes(options)
+	partOptions := grid.Options{Tempo: projectOptions.Tempo, DeviceName: options["DeviceName"], Notes: patternNotes}
 
 	gridText := strings.Join(patternLines, "\n")
 	midiPoints := grid.TransformGridToMidi(gridText, partOptions)
@@ -101,4 +103,12 @@ func parseForConfiguration(line string) *option {
 	}
 
 	return nil
+}
+
+func parseNotes(options map[string]string) []int {
+	if notesOption, ok := options["Notes"]; ok {
+		return notes.Parse(notesOption)
+	}
+
+	return []int{60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83}
 }

@@ -32,6 +32,8 @@ func check(e error) {
 
 // Parse a project file
 func Parse(fileName string) Project {
+	dir, _ := os.Getwd()
+	defer os.Chdir(dir)
 	projectDir := filepath.Dir(fileName)
 	file, err := os.Open(fileName)
 	os.Chdir(projectDir)
@@ -41,7 +43,7 @@ func Parse(fileName string) Project {
 
 	parsedTempo := parseTempo(options)
 
-	projectOptions := grid.PartOptions{Tempo: parsedTempo}
+	projectOptions := grid.Options{Tempo: parsedTempo}
 
 	parsedPatternFiles := map[string]patternfile.PatternFile{}
 
@@ -66,6 +68,7 @@ func Parse(fileName string) Project {
 		Length:       endOfLastPart - 1,
 		Tempo:        parsedTempo,
 	}
+
 }
 
 func parseTempo(options map[string]string) grid.Tempo {

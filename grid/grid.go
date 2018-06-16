@@ -15,18 +15,19 @@ type TextGridPoint struct {
 	Symbol rune
 }
 
-// PartOptions passed to grid transformer
-type PartOptions struct {
+//Options passed to grid transformer
+type Options struct {
 	Tempo      Tempo
 	DeviceName string
+	Notes      []int
 }
 
 //TransformGridToMidi transforms a grid into midi notes
-func TransformGridToMidi(gridText string, options PartOptions) []MidiPoint {
+func TransformGridToMidi(gridText string, options Options) []MidiPoint {
 	textGridPoints := TransformTextGrid(gridText)
 	rawPitchPoints := TransformTextGridPoints(textGridPoints, "down")
 	beatPoints := TransformRawPitchPoints(rawPitchPoints)
-	pitchPoints := TransformBeatPoints(beatPoints, []int{62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73})
+	pitchPoints := TransformBeatPoints(beatPoints, options.Notes)
 	timedPoints := TransformPitchPoints(pitchPoints, options.Tempo)
 	midiPoints := TransformTimedPoints(timedPoints)
 	midiPoints = SetDeviceID(midiPoints, options.DeviceName)
