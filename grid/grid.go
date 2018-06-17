@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"../devices"
+	"../velocity"
 	"github.com/rakyll/portmidi"
 )
 
@@ -29,7 +30,8 @@ func TransformGridToMidi(gridText string, options Options) []MidiPoint {
 	beatPoints := TransformRawPitchPoints(rawPitchPoints)
 	pitchPoints := TransformBeatPoints(beatPoints, options.Notes)
 	timedPoints := TransformPitchPoints(pitchPoints, options.Tempo)
-	midiPoints := TransformTimedPoints(timedPoints)
+	velocityPoints := TransformTimedPoints(timedPoints)
+	midiPoints := TransformVelocityPoints(velocityPoints)
 	midiPoints = SetDeviceID(midiPoints, options.DeviceName)
 	return midiPoints
 }
@@ -172,19 +174,47 @@ func TransformPitchPoints(points []PitchPoint, tempo Tempo) []TimedPoint {
 	return results
 }
 
+//VelocityPoint is the event informattion with the Symbol converted to a velocity
+type VelocityPoint struct {
+	Pitch    int
+	Start    Milliseconds
+	Length   Milliseconds
+	Velocity int
+	Symbol   rune
+}
+
+//TransformTimedPoints transforms velocity points
+func TransformTimedPoints(points []TimedPoint) []VelocityPoint {
+	results := make([]VelocityPoint, len(points))
+
+	for i, point := range points {
+		point := VelocityPoint{
+			Pitch:    point.Pitch,
+			Start:    point.Start,
+			Length:   point.Length,
+			Velocity: velocity.ConvertSymbol(point.Symbol),
+			Symbol:   point.Symbol,
+		}
+
+		results[i] = point
+	}
+
+	return results
+}
+
 //MidiPoint containts a midi event and the device ID (and later the channel)
 type MidiPoint struct {
 	Event    portmidi.Event
 	DeviceID portmidi.DeviceID
 }
 
-//TransformTimedPoints transforms timed points into portmidi Events
-func TransformTimedPoints(points []TimedPoint) []MidiPoint {
+//TransformVelocityPoints transforms velocity points into portmidi Events
+func TransformVelocityPoints(points []VelocityPoint) []MidiPoint {
 	results := make([]MidiPoint, len(points)*2)
 
 	for i, point := range points {
-		startEvent := portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start), Status: 0x90, Data1: int64(point.Pitch), Data2: 100}
-		endEvent := portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start+point.Length), Status: 0x80, Data1: int64(point.Pitch), Data2: 100}
+		startEvent := portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start), Status: 0x90, Data1: int64(point.Pitch), Data2: int64(point.Velocity)}
+		endEvent := portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start+point.Length), Status: 0x80, Data1: int64(point.Pitch), Data2: int64(point.Velocity)}
 		results[i*2] = MidiPoint{Event: startEvent}
 		results[i*2+1] = MidiPoint{Event: endEvent}
 	}

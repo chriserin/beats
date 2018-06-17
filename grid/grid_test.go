@@ -1,7 +1,6 @@
 package grid
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -134,14 +133,26 @@ func TestTransformPitchPoints(t *testing.T) {
 	assert.Equal(t, point1, results[0])
 	assert.Equal(t, point2, results[1])
 	assert.Equal(t, point3, results[2])
-
-	fmt.Println(points)
 }
 
 func TestTransformTimedPoints(t *testing.T) {
 	points := []TimedPoint{{42, 0, 499, 'X'}, {43, 500, 499, 'X'}, {44, 1000, 499, 'X'}}
 
 	results := TransformTimedPoints(points)
+
+	point1 := VelocityPoint{42, 0, 499, 120, 'X'}
+	point2 := VelocityPoint{43, 500, 499, 120, 'X'}
+	point3 := VelocityPoint{44, 1000, 499, 120, 'X'}
+
+	assert.Equal(t, point1, results[0])
+	assert.Equal(t, point2, results[1])
+	assert.Equal(t, point3, results[2])
+}
+
+func TestTransformVelocityPoints(t *testing.T) {
+	points := []VelocityPoint{{42, 0, 499, 100, 'X'}, {43, 500, 499, 100, 'X'}, {44, 1000, 499, 100, 'X'}}
+
+	results := TransformVelocityPoints(points)
 
 	event1 := MidiPoint{Event: portmidi.Event{Timestamp: portmidi.Time(), Status: 0x90, Data1: 42, Data2: 100}}
 	event1End := MidiPoint{Event: portmidi.Event{Timestamp: portmidi.Time() + 499, Status: 0x80, Data1: 42, Data2: 100}}
@@ -156,6 +167,4 @@ func TestTransformTimedPoints(t *testing.T) {
 	assert.Equal(t, event2End, results[3])
 	assert.Equal(t, event3, results[4])
 	assert.Equal(t, event3End, results[5])
-
-	fmt.Println(points)
 }
