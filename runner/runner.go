@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"fmt"
 	"log"
 
 	"../projectfile"
@@ -19,6 +18,7 @@ type Runner struct {
 type Out struct {
 	DeviceID portmidi.DeviceID
 	Stream   *portmidi.Stream
+	Channel  portmidi.Channel
 }
 
 // InitializeFromProject func
@@ -43,10 +43,8 @@ func (runner Runner) Run() {
 func (runner Runner) runProject(project projectfile.Project) {
 
 	for _, part := range project.Parts {
-		for i, midiPoint := range part.Events {
-			fmt.Printf("Scheduling point %d\n", i)
-			fmt.Println(midiPoint.Event)
-			out, isNew := runner.findOrCreateOut(midiPoint.DeviceID)
+		for _, midiPoint := range part.Events {
+			out, isNew := runner.findOrCreateOut(midiPoint.DeviceID, midiPoint.Channel)
 			if isNew {
 				runner.outs = append(runner.outs, out)
 			}
@@ -55,18 +53,21 @@ func (runner Runner) runProject(project projectfile.Project) {
 	}
 }
 
-func (runner Runner) findOrCreateOut(deviceID portmidi.DeviceID) (Out, bool) {
-	fmt.Printf("Finding Device for %d\n", int(deviceID))
+func (runner Runner) findOrCreateOut(deviceID portmidi.DeviceID, channel portmidi.Channel) (Out, bool) {
 	for _, out := range runner.outs {
-		if out.DeviceID == deviceID {
+		if out.DeviceID == deviceID && out.Channel == channel {
 			return out, false
 		}
 	}
 
 	newOut, err := portmidi.NewOutputStream(deviceID, 1024, 1)
+	if channel != -1 {
+		newOut.SetChannelMask(int(channel))
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return Out{Stream: newOut, DeviceID: deviceID}, true
+	return Out{Stream: newOut, DeviceID: deviceID, Channel: channel}, true
 }

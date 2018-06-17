@@ -61,7 +61,13 @@ func Parse(fileName string, projectOptions grid.Options) PatternFile {
 	}
 
 	patternNotes := parseNotes(options)
-	partOptions := grid.Options{Tempo: projectOptions.Tempo, DeviceName: options["DeviceName"], Notes: patternNotes}
+	channel := parseChannel(options)
+	partOptions := grid.Options{
+		Tempo:      projectOptions.Tempo,
+		DeviceName: options["DeviceName"],
+		Notes:      patternNotes,
+		Channel:    channel,
+	}
 
 	gridText := strings.Join(patternLines, "\n")
 	midiPoints := grid.TransformGridToMidi(gridText, partOptions)
@@ -111,4 +117,16 @@ func parseNotes(options map[string]string) []int {
 	}
 
 	return []int{60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83}
+}
+
+func parseChannel(options map[string]string) portmidi.Channel {
+	if channelOption, ok := options["Channel"]; ok {
+		if channelNum, err := strconv.Atoi(channelOption); err == nil {
+			if channelNum >= 0 && channelNum < 15 {
+				return portmidi.Channel(channelNum)
+			}
+		}
+	}
+
+	return portmidi.Channel(-1)
 }

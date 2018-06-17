@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"../grid"
+	"github.com/rakyll/portmidi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,6 +31,12 @@ func TestParseNotes(t *testing.T) {
 	gridTextLinesCount := len(regexp.MustCompile("\n").Split(pFile.GridText, -1))
 	assert.Equal(t, 12, gridTextLinesCount, pFile.GridText)
 	assert.Equal(t, int64(60), pFile.MidiPoints[0].Event.Data1)
+}
+
+func TestParseChannel(t *testing.T) {
+	pFile := Parse(testfileName("channeled_pattern.pf"), grid.Options{})
+
+	assert.Equal(t, portmidi.Channel(4), pFile.MidiPoints[0].Channel)
 }
 
 func testfileName(fileName string) string {

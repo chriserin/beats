@@ -1,7 +1,6 @@
 package grid
 
 import (
-	"fmt"
 	"strings"
 
 	"../devices"
@@ -21,6 +20,7 @@ type Options struct {
 	Tempo      Tempo
 	DeviceName string
 	Notes      []int
+	Channel    portmidi.Channel
 }
 
 //TransformGridToMidi transforms a grid into midi notes
@@ -32,7 +32,7 @@ func TransformGridToMidi(gridText string, options Options) []MidiPoint {
 	timedPoints := TransformPitchPoints(pitchPoints, options.Tempo)
 	velocityPoints := TransformTimedPoints(timedPoints)
 	midiPoints := TransformVelocityPoints(velocityPoints)
-	midiPoints = SetDeviceID(midiPoints, options.DeviceName)
+	midiPoints = SetDeviceID(midiPoints, options.DeviceName, options.Channel)
 	return midiPoints
 }
 
@@ -206,6 +206,7 @@ func TransformTimedPoints(points []TimedPoint) []VelocityPoint {
 type MidiPoint struct {
 	Event    portmidi.Event
 	DeviceID portmidi.DeviceID
+	Channel  portmidi.Channel
 }
 
 //TransformVelocityPoints transforms velocity points into portmidi Events
@@ -223,14 +224,13 @@ func TransformVelocityPoints(points []VelocityPoint) []MidiPoint {
 }
 
 //SetDeviceID sets the device ID on all midi points
-func SetDeviceID(points []MidiPoint, name string) []MidiPoint {
+func SetDeviceID(points []MidiPoint, name string, channel portmidi.Channel) []MidiPoint {
 	results := make([]MidiPoint, len(points))
 
 	deviceID := devices.FindDeviceID(name)
-	fmt.Printf("Found device id %d for name %s\n", int(deviceID), name)
 
 	for i, point := range points {
-		results[i] = MidiPoint{Event: point.Event, DeviceID: deviceID}
+		results[i] = MidiPoint{Event: point.Event, DeviceID: deviceID, Channel: channel}
 	}
 
 	return results
