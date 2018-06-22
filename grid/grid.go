@@ -21,6 +21,7 @@ type Options struct {
 	DeviceName string
 	Notes      []int
 	Channel    portmidi.Channel
+	Start      portmidi.Timestamp
 }
 
 //TransformGridToMidi transforms a grid into midi notes
@@ -31,8 +32,9 @@ func TransformGridToMidi(gridText string, options Options) []MidiPoint {
 	pitchPoints := TransformBeatPoints(beatPoints, options.Notes)
 	timedPoints := TransformPitchPoints(pitchPoints, options.Tempo)
 	velocityPoints := TransformTimedPoints(timedPoints)
-	midiPoints := TransformVelocityPoints(velocityPoints)
+	midiPoints := TransformVelocityPoints(velocityPoints, options.Start)
 	midiPoints = SetDeviceID(midiPoints, options.DeviceName, options.Channel)
+
 	return midiPoints
 }
 
@@ -210,12 +212,12 @@ type MidiPoint struct {
 }
 
 //TransformVelocityPoints transforms velocity points into portmidi Events
-func TransformVelocityPoints(points []VelocityPoint) []MidiPoint {
+func TransformVelocityPoints(points []VelocityPoint, startTime portmidi.Timestamp) []MidiPoint {
 	results := make([]MidiPoint, len(points)*2)
 
 	for i, point := range points {
-		startEvent := portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start), Status: 0x90, Data1: int64(point.Pitch), Data2: int64(point.Velocity)}
-		endEvent := portmidi.Event{Timestamp: portmidi.Time() + portmidi.Timestamp(point.Start+point.Length), Status: 0x80, Data1: int64(point.Pitch), Data2: int64(point.Velocity)}
+		startEvent := portmidi.Event{Timestamp: startTime + portmidi.Timestamp(point.Start), Status: 0x90, Data1: int64(point.Pitch), Data2: int64(point.Velocity)}
+		endEvent := portmidi.Event{Timestamp: startTime + portmidi.Timestamp(point.Start+point.Length), Status: 0x80, Data1: int64(point.Pitch), Data2: int64(point.Velocity)}
 		results[i*2] = MidiPoint{Event: startEvent}
 		results[i*2+1] = MidiPoint{Event: endEvent}
 	}

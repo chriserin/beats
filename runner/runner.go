@@ -1,10 +1,13 @@
 package runner
 
 import (
+	"fmt"
 	"log"
+	"sort"
 
 	"../projectfile"
 
+	"../grid"
 	"github.com/rakyll/portmidi"
 )
 
@@ -42,14 +45,26 @@ func (runner Runner) Run() {
 
 func (runner Runner) runProject(project projectfile.Project) {
 
+	events := []grid.MidiPoint{}
+
 	for _, part := range project.Parts {
-		for _, midiPoint := range part.Events {
-			out, isNew := runner.findOrCreateOut(midiPoint.DeviceID, midiPoint.Channel)
-			if isNew {
-				runner.outs = append(runner.outs, out)
-			}
-			out.Stream.Write([]portmidi.Event{midiPoint.Event})
+		events = append(events, part.Events...)
+	}
+
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].Event.Timestamp < events[j].Event.Timestamp
+	})
+
+	fmt.Println(events)
+
+	for _, midiPoint := range events {
+		out, isNew := runner.findOrCreateOut(midiPoint.DeviceID, midiPoint.Channel)
+
+		if isNew {
+			runner.outs = append(runner.outs, out)
 		}
+
+		out.Stream.Write([]portmidi.Event{midiPoint.Event})
 	}
 }
 

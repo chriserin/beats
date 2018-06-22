@@ -22,7 +22,6 @@ func main() {
 	}
 
 	portmidi.Initialize()
-
 	project := projectfile.Parse(fileName)
 	runner := runner.InitializeFromProject(project)
 	runner.Run()
