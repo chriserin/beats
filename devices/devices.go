@@ -9,7 +9,7 @@ import (
 
 //FindDeviceID func
 func FindDeviceID(deviceName string) portmidi.DeviceID {
-	fmt.Println("Looking for" + deviceName)
+	fmt.Println("Looking for " + deviceName)
 	for i := 0; i < portmidi.CountDevices(); i++ {
 		info := portmidi.Info(portmidi.DeviceID(i))
 		if strings.Contains(info.Name, deviceName) && info.IsOutputAvailable {

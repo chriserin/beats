@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"fmt"
 	"log"
 	"sort"
 
@@ -54,8 +53,6 @@ func (runner Runner) runProject(project projectfile.Project) {
 	sort.Slice(events, func(i, j int) bool {
 		return events[i].Event.Timestamp < events[j].Event.Timestamp
 	})
-
-	fmt.Println(events)
 
 	for _, midiPoint := range events {
 		out, isNew := runner.findOrCreateOut(midiPoint.DeviceID, midiPoint.Channel)

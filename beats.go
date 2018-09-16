@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -26,7 +25,6 @@ func main() {
 	runner := runner.InitializeFromProject(project)
 	runner.Run()
 	time.Sleep(time.Duration(project.Length) * time.Millisecond)
-	fmt.Println(portmidi.Time())
 	defer runner.CloseOuts()
 
 	defer portmidi.Terminate()

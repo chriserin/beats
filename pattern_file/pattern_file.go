@@ -3,7 +3,6 @@ package patternfile
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -73,8 +72,6 @@ func Parse(fileName string, projectOptions grid.Options) PatternFile {
 
 	gridText := strings.Join(patternLines, "\n")
 	midiPoints := grid.TransformGridToMidi(gridText, partOptions)
-
-	fmt.Println(midiPoints)
 
 	return PatternFile{
 		DeviceName: options["DeviceName"],
